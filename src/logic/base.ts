@@ -1,4 +1,3 @@
-
 export interface FooRequest {
 	name: string;
 	age: number;
