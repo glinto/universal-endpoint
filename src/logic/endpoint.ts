@@ -45,4 +45,5 @@ export function decoratedEndpoint<I, O>(request: I, outputGuard: Guard<O>): Prom
 
 export type AcceptedMethods = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
-
+export const endpoint = <I, O>(path: string, inputGuard: Guard<I>, outputGuard: Guard<O>) => 
+	UniversalEndpoint.decorate(path, inputGuard, outputGuard);

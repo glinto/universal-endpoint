@@ -1,2 +1,2 @@
-export * from './logic/proxy';
+export * from './logic/logicservice';
 
