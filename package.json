@@ -1,28 +1,30 @@
 {
-  "name": "universal-endpoint",
-  "version": "0.1.0",
-  "main": "dist/index.js",
-  "type": "module",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "tsc -w",
-    "build": "tsc --build",
-    "lint": "eslint src/",
-    "prepack": "npm run prettier:check && npm run lint && npm run build",
-    "prettier": "prettier --write src/",
-    "prettier:check": "prettier --check src/"
-  },
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "devDependencies": {
-    "@types/node": "^22.10.1",
-    "@typescript-eslint/eslint-plugin": "^8.18.0",
-    "@typescript-eslint/parser": "^8.18.0",
-    "eslint": "^9.16.0",
-    "eslint-config-prettier": "^9.1.0",
-    "prettier": "^3.4.2",
-    "typescript": "^5.7.2",
-    "typescript-eslint": "^8.18.0"
-  }
+	"name": "universal-endpoint",
+	"version": "0.1.0",
+	"main": "dist/index.js",
+	"type": "module",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"example:client": "node dist/example/client.js",
+		"example:server": "node dist/example/server.js",
+		"build": "tsc --build",
+		"dev": "tsc -w",
+		"lint": "eslint src/",
+		"prepack": "npm run prettier:check && npm run lint && npm run build",
+		"prettier": "prettier --write src/",
+		"prettier:check": "prettier --check src/"
+	},
+	"author": "",
+	"license": "ISC",
+	"description": "",
+	"devDependencies": {
+		"@types/node": "^22.10.1",
+		"@typescript-eslint/eslint-plugin": "^8.18.0",
+		"@typescript-eslint/parser": "^8.18.0",
+		"eslint": "^9.16.0",
+		"eslint-config-prettier": "^9.1.0",
+		"prettier": "^3.4.2",
+		"typescript": "^5.7.2",
+		"typescript-eslint": "^8.18.0"
+	}
 }
