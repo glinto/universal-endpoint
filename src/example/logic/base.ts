@@ -1,11 +1,13 @@
-import { getGuardFor } from '../../index.js';
+import { getGuardFor, hasPrimitiveProps } from '../../index.js';
 
 export interface FooRequest {
 	name: string;
 	age: number;
 }
 
-export const isFooRequest = getGuardFor<FooRequest>({ name: 'string', age: 'number' });
+export function isFooRequest(data: unknown): data is FooRequest {
+	return hasPrimitiveProps(data, { name: 'string', age: 'number' });
+}
 
 export interface FooResult {
 	message: string;
