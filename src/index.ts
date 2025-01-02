@@ -1,3 +1,5 @@
+import { IncomingMessage } from 'http';
+
 export type Guard<T> = (value: unknown) => value is T;
 
 export interface UniversalEndpointRouteHandler {
@@ -5,13 +7,18 @@ export interface UniversalEndpointRouteHandler {
 	implementation: (input: unknown) => Promise<unknown>;
 }
 
-class HTTPError extends Error {
+export class HTTPError extends Error {
 	constructor(
 		public status: number,
 		public message: string
 	) {
 		super(message ? message : `HTTP error ${status}`);
 	}
+}
+
+export interface HTTPResult {
+	status: number;
+	body: string;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -83,6 +90,45 @@ export class UniversalEndpoint<T extends { [index: string | number | symbol]: an
 
 			return replacementMethod;
 		};
+	}
+
+	handleIncomingRequest(req: IncomingMessage): Promise<HTTPResult> {
+		const url = new URL(req.url || '', this.baseUrl);
+		const handler = this.handlers[url.pathname];
+		if (handler) {
+			return requestBody(req)
+				.then((body) => jsonPromise(body))
+				.then((data) => handler.implementation(data))
+				.then((result) => {
+					return { status: 200, body: JSON.stringify(result) };
+				});
+		} else {
+			return Promise.reject(new HTTPError(404, 'Not Found'));
+		}
+	}
+}
+
+function requestBody(req: IncomingMessage): Promise<string> {
+	return new Promise((resolve, reject) => {
+		let body = '';
+		req.on('data', (chunk) => {
+			body += chunk.toString();
+		});
+		req.on('end', () => {
+			resolve(body);
+		});
+		req.on('error', (error) => {
+			reject(new HTTPError(500, error.message));
+		});
+	});
+}
+
+function jsonPromise(data: string): Promise<unknown> {
+	try {
+		return Promise.resolve(JSON.parse(data));
+	} catch (error) {
+		const msg = error instanceof Error ? error.message : 'Invalid JSON';
+		return Promise.reject(new HTTPError(400, msg));
 	}
 }
 
