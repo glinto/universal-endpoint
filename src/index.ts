@@ -94,14 +94,19 @@ export class UniversalEndpoint<T extends { [index: string | number | symbol]: an
 
 	handleIncomingRequest(req: IncomingMessage): Promise<HTTPResult> {
 		const url = new URL(req.url || '', this.baseUrl);
-		const handler = this.handlers[url.pathname];
+		return requestBody(req).then((body) => this.handlePathWithBody(url.pathname, body));
+	}
+
+	handlePathWithBody(path: string, body: string): Promise<HTTPResult> {
+		return jsonPromise(body).then((json) => this.handlePathWithJson(path, json));
+	}
+
+	handlePathWithJson(path: string, json: unknown): Promise<HTTPResult> {
+		const handler = this.handlers[path];
 		if (handler) {
-			return requestBody(req)
-				.then((body) => jsonPromise(body))
-				.then((data) => handler.implementation(data))
-				.then((result) => {
-					return { status: 200, body: JSON.stringify(result) };
-				});
+			return handler.implementation(json).then((result) => {
+				return { status: 200, body: JSON.stringify(result) };
+			});
 		} else {
 			return Promise.reject(new HTTPError(404, 'Not Found'));
 		}
