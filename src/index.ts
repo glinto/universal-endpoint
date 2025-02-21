@@ -23,10 +23,26 @@ export interface HTTPResult {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class UniversalEndpoint<T extends { [index: string | number | symbol]: any }> {
+	/**
+	 * The base URL for the server running the service logic
+	 */
 	baseUrl = 'http://localhost';
+	/**
+	 * On the server side, you must attach a service logic instance to this property, which will
+	 * be used to implement the endpoint methods.
+	 */
 	implementation: T | undefined = undefined;
-	handlers: Record<string, UniversalEndpointRouteHandler> = {};
 
+	protected handlers: Record<string, UniversalEndpointRouteHandler> = {};
+
+	/**
+	 * Creates a new UniversalEndpoint instance and a corresponding endpoint decorator.
+	 * You can use the decorator to decorate client class methods which will be converted to HTTP fetches.
+	 *
+	 *
+	 *
+	 * @returns An object with the UniversalEndpoint instance and the endpoint decorator.
+	 */
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	static create<T extends { [index: string | number | symbol]: any }>() {
 		const ep = new UniversalEndpoint<T>();
