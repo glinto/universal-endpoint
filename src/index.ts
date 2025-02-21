@@ -1,4 +1,13 @@
-import { IncomingMessage } from 'http';
+/**
+ * An interface that is like the Node.js IncomingMessage shape without having to rely on the Node.js types.
+ */
+export interface IncomingMessageLike {
+	url?: string | undefined;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	on(event: 'data', listener: (chunk: any) => void): this;
+	on(event: 'end', listener: () => void): this;
+	on(event: 'error', listener: (error: Error) => void): this;
+}
 
 export type Guard<T> = (value: unknown) => value is T;
 
@@ -109,7 +118,7 @@ export class UniversalEndpoint<T extends { [index: string | number | symbol]: an
 		};
 	}
 
-	handleIncomingRequest(req: IncomingMessage): Promise<HTTPResult> {
+	handleIncomingRequest(req: IncomingMessageLike): Promise<HTTPResult> {
 		const url = new URL(req.url || '', this.baseUrl);
 		return requestBody(req).then((body) => this.handlePathWithBody(url.pathname, body));
 	}
@@ -130,7 +139,7 @@ export class UniversalEndpoint<T extends { [index: string | number | symbol]: an
 	}
 }
 
-function requestBody(req: IncomingMessage): Promise<string> {
+function requestBody(req: IncomingMessageLike): Promise<string> {
 	return new Promise((resolve, reject) => {
 		let body = '';
 		req.on('data', (chunk) => {
