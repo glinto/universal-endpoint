@@ -14,7 +14,3 @@ export interface FooResult {
 }
 
 export const isFooResult = getGuardFor<FooResult>({ message: 'string' });
-
-export interface Logic {
-	foo(request: FooRequest): Promise<FooResult>;
-}
