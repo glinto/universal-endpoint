@@ -90,7 +90,8 @@ export class UniversalEndpoint<T extends { [index: string | number | symbol]: an
 					if (methodName in impl) {
 						const method = impl[methodName];
 						if (typeof method === 'function') {
-							return method(i);
+							// call method with 'this' set to 'impl'
+							return method.call(impl, i) as Promise<Return>;
 						}
 					}
 					throw new HTTPError(501, 'Not implemented');
