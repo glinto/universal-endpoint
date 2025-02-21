@@ -1,12 +1,12 @@
 import { HTTPError } from '../index.js';
-import { ServerLogic } from './logic/implementation.js';
-import { universalEndpoint } from './logic/service.js';
+import { ServerLogic } from './logic/server.js';
+import { endpointInstance } from './logic/logic.js';
 import { createServer } from 'http';
 
-universalEndpoint.implementation = new ServerLogic();
+endpointInstance.implementation = new ServerLogic();
 
 const server = createServer((req, res) => {
-	universalEndpoint
+	endpointInstance
 		.handleIncomingRequest(req)
 		.then((result) => {
 			res.writeHead(result.status, { 'Content-Type': 'application/json' });

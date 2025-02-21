@@ -1,0 +1,5 @@
+src/example
+dist/example
+.vscode
+.prettierrc
+eslint.config.mjs

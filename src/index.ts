@@ -23,16 +23,32 @@ export interface HTTPResult {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class UniversalEndpoint<T extends { [index: string | number | symbol]: any }> {
+	/**
+	 * The base URL for the server running the service logic
+	 */
 	baseUrl = 'http://localhost';
+	/**
+	 * On the server side, you must attach a service logic instance to this property, which will
+	 * be used to implement the endpoint methods.
+	 */
 	implementation: T | undefined = undefined;
-	handlers: Record<string, UniversalEndpointRouteHandler> = {};
 
+	protected handlers: Record<string, UniversalEndpointRouteHandler> = {};
+
+	/**
+	 * Creates a new UniversalEndpoint instance and a corresponding endpoint decorator.
+	 * You can use the decorator to decorate client class methods which will be converted to HTTP fetches.
+	 *
+	 *
+	 *
+	 * @returns An object with the UniversalEndpoint instance and the endpoint decorator.
+	 */
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	static create<T extends { [index: string | number | symbol]: any }>() {
 		const ep = new UniversalEndpoint<T>();
 		//ep.implementation = implementation;
 		return {
-			universalEndpoint: ep,
+			endpointInstance: ep,
 			endpoint: <I, O>(path: string, inputGuard: Guard<I>, outputGuard: Guard<O>) =>
 				ep.decorate(path, inputGuard, outputGuard)
 		};
@@ -74,7 +90,8 @@ export class UniversalEndpoint<T extends { [index: string | number | symbol]: an
 					if (methodName in impl) {
 						const method = impl[methodName];
 						if (typeof method === 'function') {
-							return method(i);
+							// call method with 'this' set to 'impl'
+							return method.call(impl, i) as Promise<Return>;
 						}
 					}
 					throw new HTTPError(501, 'Not implemented');
@@ -94,14 +111,19 @@ export class UniversalEndpoint<T extends { [index: string | number | symbol]: an
 
 	handleIncomingRequest(req: IncomingMessage): Promise<HTTPResult> {
 		const url = new URL(req.url || '', this.baseUrl);
-		const handler = this.handlers[url.pathname];
+		return requestBody(req).then((body) => this.handlePathWithBody(url.pathname, body));
+	}
+
+	handlePathWithBody(path: string, body: string): Promise<HTTPResult> {
+		return jsonPromise(body).then((json) => this.handlePathWithJson(path, json));
+	}
+
+	handlePathWithJson(path: string, json: unknown): Promise<HTTPResult> {
+		const handler = this.handlers[path];
 		if (handler) {
-			return requestBody(req)
-				.then((body) => jsonPromise(body))
-				.then((data) => handler.implementation(data))
-				.then((result) => {
-					return { status: 200, body: JSON.stringify(result) };
-				});
+			return handler.implementation(json).then((result) => {
+				return { status: 200, body: JSON.stringify(result) };
+			});
 		} else {
 			return Promise.reject(new HTTPError(404, 'Not Found'));
 		}

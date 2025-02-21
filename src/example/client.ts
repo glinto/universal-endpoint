@@ -1,8 +1,8 @@
-import { ClientLogic, universalEndpoint } from './logic/service.js';
+import { ClientLogic, endpointInstance } from './logic/logic.js';
 
 const logic = new ClientLogic();
 
-universalEndpoint.baseUrl = 'http://localhost:8081';
+endpointInstance.baseUrl = 'http://localhost:8081';
 
 logic
 	.foo({ name: 'John', age: 42 })
