@@ -48,7 +48,7 @@ export class UniversalEndpoint<T extends { [index: string | number | symbol]: an
 		const ep = new UniversalEndpoint<T>();
 		//ep.implementation = implementation;
 		return {
-			universalEndpoint: ep,
+			endpointInstance: ep,
 			endpoint: <I, O>(path: string, inputGuard: Guard<I>, outputGuard: Guard<O>) =>
 				ep.decorate(path, inputGuard, outputGuard)
 		};
