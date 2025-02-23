@@ -6,6 +6,7 @@ import { createServer } from 'http';
 endpointInstance.implementation = new ServerLogic();
 
 const server = createServer((req, res) => {
+	console.log(req.method, req.url);
 	endpointInstance
 		.handleIncomingRequest(req)
 		.then((result) => {
