@@ -164,8 +164,8 @@ function jsonPromise(data: string): Promise<unknown> {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function stubEndpoint<I, O>(request: I): Promise<O> {
-	return Promise.reject('Not implemented');
+export function endpointStub<I, O>(request?: I): Promise<O> {
+	return Promise.reject(new HTTPError(501, 'Not implemented'));
 }
 
 export type AcceptedMethods = 'GET' | 'POST' | 'PUT' | 'DELETE';
