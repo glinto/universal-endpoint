@@ -84,7 +84,6 @@ export class UniversalEndpoint<T extends { [index: string | number | symbol]: an
 			init.body = JSON.stringify(argMapping.arg);
 		}
 
-		console.log('fetching', method, argMapping.path, argMapping.arg);
 		const response = await fetch(new URL(argMapping.path, this.baseUrl), init);
 		if (!response.ok) {
 			throw new HTTPError(response.status, response.statusText);
