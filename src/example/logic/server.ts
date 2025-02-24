@@ -13,4 +13,8 @@ export class ServerLogic extends Logic {
 	async max(nums: number[]): Promise<number> {
 		return Math.max(...nums);
 	}
+
+	async bar(): Promise<string> {
+		return 'bar';
+	}
 }

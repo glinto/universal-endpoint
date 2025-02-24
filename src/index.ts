@@ -95,7 +95,7 @@ export class UniversalEndpoint<T extends { [index: string | number | symbol]: an
 		return result;
 	}
 
-	decorate<This, Input, Return>(
+	decorate<This, Return, Input = void>(
 		method: AcceptedMethods,
 		path: string,
 		inputGuard: Guard<Input> | undefined,

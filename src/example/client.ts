@@ -17,6 +17,10 @@ logic
 	.then((result) => {
 		console.log(result);
 	})
+	.then(() => logic.bar())
+	.then((result) => {
+		console.log(result);
+	})
 	.catch((error) => {
 		console.log('foo error', error);
 	});

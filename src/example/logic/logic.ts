@@ -18,6 +18,11 @@ export abstract class Logic {
 	async max(nums: number[]): Promise<number> {
 		return endpointStub(nums);
 	}
+
+	@endpoint('GET', '/bar', undefined, stringGuard)
+	async bar(v: void): Promise<string> {
+		return endpointStub(v);
+	}
 }
 
 export class ClientLogic extends Logic {}
