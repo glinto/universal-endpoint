@@ -52,6 +52,21 @@ export function getPayload<I>(request: HTTPRequest<I>): I {
 	return request;
 }
 
+export function getHeaders<I>(request: HTTPRequest<I>): IncomingHeadersLike {
+	if (typeof request === 'object' && request !== null && 'headers' in request) return request.headers || {};
+	return {};
+}
+
+function addHeaders<I>(payload: HTTPRequest<I>, headers: IncomingHeadersLike): HTTPRequest<I> {
+	if (typeof payload === 'object' && payload !== null) {
+		if ('headers' in payload) {
+			return { headers: { ...payload.headers, ...headers }, payload: payload.payload };
+		}
+		return { headers, payload: getPayload(payload) };
+	}
+	return { headers, payload };
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class UniversalEndpoint<T extends { [index: string | number | symbol]: any }> {
 	/**
@@ -94,12 +109,17 @@ export class UniversalEndpoint<T extends { [index: string | number | symbol]: an
 		return { ...input, ...additionalData } as T;
 	}
 
-	async fetchEndpoint<I, O>(method: AcceptedMethods, path: string, request: I, outputGuard: Guard<O>): Promise<O> {
-		const argMapping = mergeArguments(path, request);
+	async fetchEndpoint<I, O>(
+		method: AcceptedMethods,
+		path: string,
+		request: HTTPRequest<I>,
+		outputGuard: Guard<O>
+	): Promise<O> {
+		const argMapping = mergeArguments(path, getPayload(request));
 
 		const init: RequestInit = {
 			method: method,
-			headers: { 'Content-Type': 'application/json' }
+			headers: { 'Content-Type': 'application/json', ...getHeaders(request) }
 		};
 		if (argMapping.arg !== null && method !== 'GET') {
 			init.body = JSON.stringify(argMapping.arg);
@@ -134,7 +154,7 @@ export class UniversalEndpoint<T extends { [index: string | number | symbol]: an
 				method: method,
 				path,
 				implementation: async (i) => {
-					if (inputGuard !== undefined && !inputGuard(i))
+					if (inputGuard !== undefined && !inputGuard(getPayload(i)))
 						throw new HTTPError(400, `Invalid input: ${JSON.stringify(i)}`);
 					const impl = decoratorInstance.implementation;
 					if (!impl) {
@@ -168,20 +188,30 @@ export class UniversalEndpoint<T extends { [index: string | number | symbol]: an
 		if (!handler || !isMethodEqualTo(req.method, handler.method)) {
 			return Promise.reject(new HTTPError(404, 'Not Found'));
 		}
-		if (req.method === 'GET') return this.handlePathWithJson(req.method, url.pathname, null);
-		return requestBody(req).then((body) => this.handlePathWithBody(req.method, url.pathname, body));
+		if (req.method === 'GET') return this.handlePathWithJson(req.method, url.pathname, null, req.headers);
+		return requestBody(req).then((body) => this.handlePathWithBody(req.method, url.pathname, body, req.headers));
 	}
 
-	handlePathWithBody(method: string | undefined, path: string, body: string): Promise<HTTPResult> {
-		return jsonPromise(body).then((json) => this.handlePathWithJson(method, path, json));
+	handlePathWithBody(
+		method: string | undefined,
+		path: string,
+		body: string,
+		headers?: IncomingHeadersLike
+	): Promise<HTTPResult> {
+		return jsonPromise(body).then((json) => this.handlePathWithJson(method, path, json, headers));
 	}
 
-	handlePathWithJson(method: string | undefined, path: string, json: unknown): Promise<HTTPResult> {
+	handlePathWithJson(
+		method: string | undefined,
+		path: string,
+		json: unknown,
+		headers?: IncomingHeadersLike
+	): Promise<HTTPResult> {
 		const handler = Object.values(this.handlers).find((h) => this.matchHandler(path, h.path));
 		if (handler && isMethodEqualTo(method, handler.method)) {
 			const payload = extractArguments(handler.path, path, json);
 
-			return handler.implementation(payload).then((result) => {
+			return handler.implementation(addHeaders(payload, headers ?? {})).then((result) => {
 				return { status: 200, body: JSON.stringify(result) };
 			});
 		} else {
