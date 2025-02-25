@@ -35,36 +35,28 @@ export interface HTTPResult {
 	body: string;
 }
 
-export interface HTTPContract<I, O> {
-	input?: Guard<I> | undefined;
-	output: Guard<O>;
-}
+const RequestSymbol = Symbol('request');
 
 export type HTTPRequest<I> =
 	| {
 			payload: I;
 			headers?: IncomingHeadersLike;
+			[RequestSymbol]: true;
 	  }
 	| I;
 
-export function getPayload<I>(request: HTTPRequest<I>): I {
-	if (typeof request === 'object' && request !== null && 'payload' in request) return request.payload;
-	return request;
-}
-
-export function getHeaders<I>(request: HTTPRequest<I>): IncomingHeadersLike {
-	if (typeof request === 'object' && request !== null && 'headers' in request) return request.headers || {};
-	return {};
-}
-
-function addHeaders<I>(payload: HTTPRequest<I>, headers: IncomingHeadersLike): HTTPRequest<I> {
-	if (typeof payload === 'object' && payload !== null) {
-		if ('headers' in payload) {
-			return { headers: { ...payload.headers, ...headers }, payload: payload.payload };
-		}
-		return { headers, payload: getPayload(payload) };
+export function wrapRequest<I>(request: HTTPRequest<I>, headers?: IncomingHeadersLike): HTTPRequest<I> {
+	if (typeof request === 'object' && request !== null && RequestSymbol in request) {
+		return { payload: request.payload, headers: { ...request.headers, ...headers }, [RequestSymbol]: true };
 	}
-	return { headers, payload };
+	return { payload: request, headers: headers, [RequestSymbol]: true };
+}
+
+export function unwrapRequest<I>(request: HTTPRequest<I>): { payload: I; headers: IncomingHeadersLike } {
+	if (typeof request === 'object' && request !== null && RequestSymbol in request) {
+		return { payload: request.payload, headers: request.headers || {} };
+	}
+	return { payload: request, headers: {} };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -115,11 +107,12 @@ export class UniversalEndpoint<T extends { [index: string | number | symbol]: an
 		request: HTTPRequest<I>,
 		outputGuard: Guard<O>
 	): Promise<O> {
-		const argMapping = mergeArguments(path, getPayload(request));
+		const unwrapped = unwrapRequest(request);
+		const argMapping = mergeArguments(path, unwrapped.payload);
 
 		const init: RequestInit = {
 			method: method,
-			headers: { 'Content-Type': 'application/json', ...getHeaders(request) }
+			headers: { 'Content-Type': 'application/json', ...unwrapped.headers }
 		};
 		if (argMapping.arg !== null && method !== 'GET') {
 			init.body = JSON.stringify(argMapping.arg);
@@ -154,7 +147,7 @@ export class UniversalEndpoint<T extends { [index: string | number | symbol]: an
 				method: method,
 				path,
 				implementation: async (i) => {
-					if (inputGuard !== undefined && !inputGuard(getPayload(i)))
+					if (inputGuard !== undefined && !inputGuard(unwrapRequest(i).payload))
 						throw new HTTPError(400, `Invalid input: ${JSON.stringify(i)}`);
 					const impl = decoratorInstance.implementation;
 					if (!impl) {
@@ -211,7 +204,7 @@ export class UniversalEndpoint<T extends { [index: string | number | symbol]: an
 		if (handler && isMethodEqualTo(method, handler.method)) {
 			const payload = extractArguments(handler.path, path, json);
 
-			return handler.implementation(addHeaders(payload, headers ?? {})).then((result) => {
+			return handler.implementation(wrapRequest(payload, headers ?? {})).then((result) => {
 				return { status: 200, body: JSON.stringify(result) };
 			});
 		} else {

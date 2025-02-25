@@ -1,3 +1,4 @@
+import { wrapRequest } from '../index.js';
 import { ClientLogic, endpointInstance } from './logic/logic.js';
 
 const logic = new ClientLogic();
@@ -13,7 +14,7 @@ logic
 	.then((result) => {
 		console.log(result);
 	})
-	.then(() => logic.max({ payload: [1, 2, 7, 4, 5], headers: { Authorization: 'Bearer xyz' } }))
+	.then(() => logic.max(wrapRequest([1, 2, 7, 4, 5], { Authorization: 'Bearer xyz' })))
 	.then((result) => {
 		console.log(result);
 	})
