@@ -1,9 +1,12 @@
+export type IncomingHeadersLike = Record<string, string | string[] | undefined>;
+
 /**
  * An interface that is like the Node.js IncomingMessage shape without having to rely on the Node.js types.
  */
 export interface IncomingMessageLike {
 	url?: string | undefined;
 	method?: string | undefined;
+	headers?: IncomingHeadersLike | undefined;
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	on(event: 'data', listener: (chunk: any) => void): this;
 	on(event: 'end', listener: () => void): this;
@@ -30,6 +33,23 @@ export class HTTPError extends Error {
 export interface HTTPResult {
 	status: number;
 	body: string;
+}
+
+export interface HTTPContract<I, O> {
+	input?: Guard<I> | undefined;
+	output: Guard<O>;
+}
+
+export type HTTPRequest<I> =
+	| {
+			payload: I;
+			headers?: IncomingHeadersLike;
+	  }
+	| I;
+
+export function getPayload<I>(request: HTTPRequest<I>): I {
+	if (typeof request === 'object' && request !== null && 'payload' in request) return request.payload;
+	return request;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -60,6 +80,7 @@ export class UniversalEndpoint<T extends { [index: string | number | symbol]: an
 		//ep.implementation = implementation;
 		return {
 			endpointInstance: ep,
+			//put the contract sctructure here
 			endpoint: <I, O>(
 				method: AcceptedMethods,
 				path: string,
@@ -104,8 +125,8 @@ export class UniversalEndpoint<T extends { [index: string | number | symbol]: an
 		// eslint-disable-next-line @typescript-eslint/no-this-alias
 		const decoratorInstance = this;
 		return function loggedMethod(
-			target: (this: This, arg: Input) => Promise<Return>,
-			context: ClassMethodDecoratorContext<This, (this: This, arg: Input) => Promise<Return>>
+			target: (this: This, arg: HTTPRequest<Input>) => Promise<Return>,
+			context: ClassMethodDecoratorContext<This, (this: This, arg: HTTPRequest<Input>) => Promise<Return>>
 		) {
 			const methodName = String(context.name);
 			//console.log(`Decorating '${methodName}' with path '${path}'.`);
@@ -132,7 +153,7 @@ export class UniversalEndpoint<T extends { [index: string | number | symbol]: an
 			decoratorInstance.handlers[path] = handler;
 
 			// The replacement method ensures that types align with the target method.
-			const replacementMethod = function (this: This, arg: Input): Promise<Return> {
+			const replacementMethod = function (this: This, arg: HTTPRequest<Input>): Promise<Return> {
 				//console.log(`Calling '${methodName}'`);
 				return decoratorInstance.fetchEndpoint(method, path, arg, outputGuard);
 			};
