@@ -12,6 +12,7 @@ export class ServerLogic extends Logic {
 	}
 
 	async max(nums: HTTPRequest<number[]>): Promise<number> {
+		console.log('full request', nums);
 		return Math.max(...getPayload(nums));
 	}
 

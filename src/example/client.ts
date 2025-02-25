@@ -13,7 +13,7 @@ logic
 	.then((result) => {
 		console.log(result);
 	})
-	.then(() => logic.max([1, 2, 7, 4, 5]))
+	.then(() => logic.max({ payload: [1, 2, 7, 4, 5], headers: { Authorization: 'Bearer xyz' } }))
 	.then((result) => {
 		console.log(result);
 	})
