@@ -219,7 +219,7 @@ export class UniversalEndpoint<T extends { [index: string | number | symbol]: an
 	 */
 	matchHandler(path: string, handlerPath: string): boolean {
 		// create a regex pattern from the handler path
-		const pattern = new RegExp(handlerPath.replace(/:[^/]+/g, '([^/]+)'));
+		const pattern = new RegExp('^' + handlerPath.replace(/:[^/]+/g, '([^/]+)') + '$');
 		return pattern.test(path);
 	}
 }
